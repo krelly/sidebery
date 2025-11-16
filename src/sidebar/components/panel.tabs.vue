@@ -42,7 +42,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { translate } from 'src/dict'
 import { DropType, MenuType, ScrollBoxComponent, TabsPanel } from 'src/types'
 import { WheelDirection } from 'src/types'
@@ -72,11 +72,33 @@ const bottomBarSpaceNeeded =
   Settings.state.subPanelHistory
 let scrollBoxEl: HTMLElement | null = null
 
+let scrollThrottleTimeout: number | undefined
+function onScrollThrottled() {
+  if (scrollThrottleTimeout) return
+  scrollThrottleTimeout = setTimeout(() => {
+    Sidebar.recalcVisibleTabs(props.panel.id)
+    scrollThrottleTimeout = undefined
+  }, 50)
+}
+
 onMounted(() => {
   if (scrollBox.value) {
     Sidebar.setPanelScrollBox(props.panel.id, scrollBox.value)
     scrollBoxEl = scrollBox.value.getScrollBox()
-    if (scrollBoxEl) Sidebar.setPanelEls(props.panel.id, { scrollBox: scrollBoxEl })
+    if (scrollBoxEl) {
+      Sidebar.setPanelEls(props.panel.id, { scrollBox: scrollBoxEl })
+      // Add scroll listener for virtual scrolling optimization
+      scrollBoxEl.addEventListener('scroll', onScrollThrottled, { passive: true })
+    }
+  }
+})
+
+onBeforeUnmount(() => {
+  if (scrollBoxEl) {
+    scrollBoxEl.removeEventListener('scroll', onScrollThrottled)
+  }
+  if (scrollThrottleTimeout) {
+    clearTimeout(scrollThrottleTimeout)
   }
 })
 

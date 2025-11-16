@@ -1991,6 +1991,32 @@ export function flattenTabs(tabIds: ID[]): void {
  * - startIndex (inclusive)
  * - endIndex (exclusive)
  */
+// Batch updates to openerTabId to avoid excessive browser API calls
+let openerTabIdUpdateQueue: Map<ID, ID | undefined> = new Map()
+let openerTabIdUpdateTimeout: number | undefined
+
+function flushOpenerTabIdUpdates() {
+  if (openerTabIdUpdateQueue.size === 0) return
+
+  const updates = Array.from(openerTabIdUpdateQueue.entries())
+  openerTabIdUpdateQueue.clear()
+
+  // Batch update all tabs in parallel
+  for (const [tabId, openerTabId] of updates) {
+    browser.tabs.update(tabId, { openerTabId: openerTabId ?? tabId }).catch(err => {
+      Logs.err('Tabs.updateTabsTree: Cannot update openerTabId:', err)
+    })
+  }
+}
+
+function queueOpenerTabIdUpdate(tabId: ID, openerTabId: ID | undefined) {
+  openerTabIdUpdateQueue.set(tabId, openerTabId)
+
+  // Debounce to batch multiple updates together
+  if (openerTabIdUpdateTimeout) clearTimeout(openerTabIdUpdateTimeout)
+  openerTabIdUpdateTimeout = setTimeout(flushOpenerTabIdUpdates, 100)
+}
+
 export function updateTabsTree(startIndex = 0, endIndex = -1): void {
   if (!Settings.state.tabsTree) return
   if (!Tabs.list || !Tabs.list.length) return
@@ -2075,17 +2101,13 @@ export function updateTabsTree(startIndex = 0, endIndex = -1): void {
       prevTab.reactive.folded = prevTab.folded = false
     }
 
-    // Update openerTabId
+    // Queue openerTabId updates for batching (performance optimization)
     if (tab.parentId === -1 && tab.openerTabId !== undefined) {
-      browser.tabs.update(tab.id, { openerTabId: tab.id }).catch(err => {
-        Logs.err('Tabs.updateTabsTree: Cannot reset openerTabId:', err)
-      })
+      queueOpenerTabIdUpdate(tab.id, undefined)
       tab.openerTabId = undefined
     }
     if (tab.parentId !== -1 && tab.openerTabId !== tab.parentId) {
-      browser.tabs.update(tab.id, { openerTabId: tab.parentId }).catch(err => {
-        Logs.err('Tabs.updateTabsTree: Cannot set openerTabId:', err)
-      })
+      queueOpenerTabIdUpdate(tab.id, tab.parentId)
       tab.openerTabId = tab.parentId
     }
 

@@ -407,14 +407,69 @@ function recalcVisibleTabsInPanel(panelId: ID) {
   const panel = Sidebar.panelsById[panelId]
   if (!Utils.isTabsPanel(panel)) return
 
-  if (panel.filteredTabs) panel.reactive.visibleTabIds = panel.filteredTabs.map(t => t.id)
-  else {
-    const visibleTabIds = []
-    for (const tab of panel.tabs) {
-      if (!tab.invisible) visibleTabIds.push(tab.id)
-    }
-    panel.reactive.visibleTabIds = visibleTabIds
+  if (panel.filteredTabs) {
+    panel.reactive.visibleTabIds = panel.filteredTabs.map(t => t.id)
+    return
   }
+
+  // Get all non-invisible tabs
+  const allVisibleTabs = []
+  for (const tab of panel.tabs) {
+    if (!tab.invisible) allVisibleTabs.push(tab)
+  }
+
+  // Virtual scrolling optimization: only render tabs in/near viewport
+  // This dramatically reduces DOM nodes for large tab lists (4000+ tabs)
+  const ENABLE_VIRTUAL_SCROLLING = allVisibleTabs.length > 100
+
+  if (!ENABLE_VIRTUAL_SCROLLING) {
+    panel.reactive.visibleTabIds = allVisibleTabs.map(t => t.id)
+    return
+  }
+
+  const scrollEl = panel.scrollEl
+  if (!scrollEl) {
+    // Fallback if scroll element not available yet
+    panel.reactive.visibleTabIds = allVisibleTabs.map(t => t.id)
+    return
+  }
+
+  const scrollTop = scrollEl.scrollTop
+  const viewportHeight = scrollEl.offsetHeight
+  const tabHeight = Sidebar.tabHeight + Sidebar.tabMargin
+
+  if (tabHeight <= 0) {
+    // Tab height not calculated yet, render all
+    panel.reactive.visibleTabIds = allVisibleTabs.map(t => t.id)
+    return
+  }
+
+  // Calculate visible range with generous buffer for smooth scrolling
+  const BUFFER_SIZE = 20 // Render 20 extra tabs above and below viewport
+  const firstVisibleIndex = Math.max(0, Math.floor(scrollTop / tabHeight) - BUFFER_SIZE)
+  const lastVisibleIndex = Math.min(
+    allVisibleTabs.length - 1,
+    Math.ceil((scrollTop + viewportHeight) / tabHeight) + BUFFER_SIZE
+  )
+
+  // Always include active tab to ensure it's rendered
+  let activeTabIndex = -1
+  const activeTabId = Tabs.activeId
+  if (activeTabId !== NOID) {
+    activeTabIndex = allVisibleTabs.findIndex(t => t.id === activeTabId)
+  }
+
+  const visibleTabIds = []
+  for (let i = firstVisibleIndex; i <= lastVisibleIndex; i++) {
+    visibleTabIds.push(allVisibleTabs[i].id)
+  }
+
+  // Ensure active tab is included even if outside viewport
+  if (activeTabIndex !== -1 && (activeTabIndex < firstVisibleIndex || activeTabIndex > lastVisibleIndex)) {
+    visibleTabIds.push(allVisibleTabs[activeTabIndex].id)
+  }
+
+  panel.reactive.visibleTabIds = visibleTabIds
 }
 
 export function addToVisibleTabs(panelId: ID, tab: Tab) {
