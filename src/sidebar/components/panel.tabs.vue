@@ -14,16 +14,18 @@
       .tab-preview(
         v-if="Tabs.reactive.inlinePreviewPinnedImg"
         :style="{ '--bgi': Tabs.reactive.inlinePreviewPinnedImg }")
+      .tab-virtual-padding(:style="{ height: `${virtualPadTop}px` }")
       template(
         v-if="Settings.state.previewTabs && (Settings.state.previewTabsMode === 'i' || Settings.state.previewTabsPageModeFallback === 'i')"
-        v-for="id in panel.reactive.visibleTabIds"
+        v-for="id in renderedTabIds"
         :key="id")
         TabComponent(:tabId="id")
         .tab-preview(
           v-if="Tabs.reactive.inlinePreviewTabId === id"
           :style="{ '--bgi': Tabs.byId[id]?.previewImg }")
       template(v-else)
-        TabComponent(v-for="id in panel.reactive.visibleTabIds" :key="id" :tabId="id")
+        TabComponent(v-for="id in renderedTabIds" :key="id" :tabId="id")
+      .tab-virtual-padding(:style="{ height: `${virtualPadBottom}px` }")
       NewTabBar(
         v-if="Settings.state.showNewTabBtns && Settings.state.newTabBarPosition === 'after_tabs'"
         :panel="panel")
@@ -42,7 +44,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { translate } from 'src/dict'
 import { DropType, MenuType, ScrollBoxComponent, TabsPanel } from 'src/types'
 import { WheelDirection } from 'src/types'
@@ -71,14 +73,97 @@ const bottomBarSpaceNeeded =
   Settings.state.subPanelBookmarks ||
   Settings.state.subPanelHistory
 let scrollBoxEl: HTMLElement | null = null
+let scrollListener: ((e: Event) => void) | undefined
+let resizeObserver: ResizeObserver | null = null
+
+const tabFullHeight = computed(() => Sidebar.tabHeight + Sidebar.tabMargin)
+
+const virtual = reactive({
+  enabled: false,
+  start: 0,
+  end: 0,
+  padTop: 0,
+  padBottom: 0,
+})
+
+const renderedTabIds = computed<ID[]>(() => {
+  const ids = props.panel.reactive.visibleTabIds
+  if (!virtual.enabled) return ids
+
+  return ids.slice(virtual.start, virtual.end)
+})
+
+const virtualPadTop = computed(() => (virtual.enabled ? virtual.padTop : 0))
+const virtualPadBottom = computed(() => (virtual.enabled ? virtual.padBottom : 0))
+
+const OVERSCAN_TABS = 24
+const MIN_VIRTUALIZED_TABS = 200
 
 onMounted(() => {
   if (scrollBox.value) {
     Sidebar.setPanelScrollBox(props.panel.id, scrollBox.value)
     scrollBoxEl = scrollBox.value.getScrollBox()
-    if (scrollBoxEl) Sidebar.setPanelEls(props.panel.id, { scrollBox: scrollBoxEl })
+    if (scrollBoxEl) {
+      Sidebar.setPanelEls(props.panel.id, { scrollBox: scrollBoxEl })
+      scrollListener = () => updateVirtualRange()
+      scrollBoxEl.addEventListener('scroll', scrollListener, { passive: true })
+
+      resizeObserver = new ResizeObserver(() => updateVirtualRange())
+      resizeObserver.observe(scrollBoxEl)
+
+      nextTick(updateVirtualRange)
+    }
   }
 })
+
+onBeforeUnmount(() => {
+  if (scrollBoxEl && scrollListener) scrollBoxEl.removeEventListener('scroll', scrollListener)
+  if (resizeObserver) resizeObserver.disconnect()
+})
+
+watch(tabFullHeight, () => nextTick(updateVirtualRange))
+watch(
+  () => props.panel.reactive.visibleTabIds.length,
+  () => nextTick(updateVirtualRange)
+)
+
+function updateVirtualRange(scrollTop?: number) {
+  if (!scrollBoxEl) return
+
+  const totalTabs = props.panel.reactive.visibleTabIds.length
+  const fullHeight = tabFullHeight.value
+
+  if (!fullHeight || totalTabs < MIN_VIRTUALIZED_TABS) {
+    virtual.enabled = false
+    virtual.start = 0
+    virtual.end = totalTabs
+    virtual.padTop = 0
+    virtual.padBottom = 0
+    return
+  }
+
+  virtual.enabled = true
+  const viewport = scrollBoxEl.offsetHeight
+  const top = scrollTop ?? scrollBoxEl.scrollTop
+
+  const maxStart = Math.max(totalTabs - 1, 0)
+  const start = Math.min(
+    Math.max(Math.floor((top - PRE_SCROLL) / fullHeight) - OVERSCAN_TABS, 0),
+    maxStart
+  )
+  const end = Math.min(
+    totalTabs,
+    Math.ceil((top + viewport + PRE_SCROLL) / fullHeight) + OVERSCAN_TABS
+  )
+
+  virtual.start = start
+  virtual.end = end
+  virtual.padTop = start * fullHeight
+
+  const renderedHeight = (end - start) * fullHeight
+  const totalHeight = totalTabs * fullHeight
+  virtual.padBottom = Math.max(totalHeight - virtual.padTop - renderedHeight, 0)
+}
 
 function onDrop(): void {
   DnD.reactive.dstType = DropType.Tabs
