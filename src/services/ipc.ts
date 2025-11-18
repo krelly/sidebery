@@ -812,11 +812,27 @@ export function onConnected(type: InstanceType, cb: (winOrTabId: ID) => void) {
   connectionHandlers.set(type, handlers)
 }
 
+export function offConnected(type: InstanceType, cb: (winOrTabId: ID) => void) {
+  const handlers = connectionHandlers.get(type)
+  if (handlers) {
+    const index = handlers.indexOf(cb)
+    if (index !== -1) handlers.splice(index, 1)
+  }
+}
+
 const disconnectionHandlers: Map<InstanceType, ((id: ID) => void)[]> = new Map()
 export function onDisconnected(type: InstanceType, cb: (winOrTabId: ID) => void) {
   const handlers = disconnectionHandlers.get(type) ?? []
   handlers.push(cb)
   disconnectionHandlers.set(type, handlers)
+}
+
+export function offDisconnected(type: InstanceType, cb: (winOrTabId: ID) => void) {
+  const handlers = disconnectionHandlers.get(type)
+  if (handlers) {
+    const index = handlers.indexOf(cb)
+    if (index !== -1) handlers.splice(index, 1)
+  }
 }
 
 /**

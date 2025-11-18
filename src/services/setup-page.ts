@@ -137,6 +137,10 @@ export function setupListeners(): void {
   window.addEventListener('hashchange', updateActiveView)
 }
 
+export function resetListeners(): void {
+  window.removeEventListener('hashchange', updateActiveView)
+}
+
 export async function waitForInit(): Promise<void> {
   return new Promise(res => {
     if (isReady) res()

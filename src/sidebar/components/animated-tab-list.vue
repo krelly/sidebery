@@ -4,7 +4,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, onBeforeUpdate, onUpdated } from 'vue'
+import { ref, onMounted, onBeforeUpdate, onUpdated, onBeforeUnmount } from 'vue'
 import { Settings } from 'src/services/settings'
 import { Sidebar } from 'src/services/sidebar'
 import { Tabs } from 'src/services/tabs.fg'
@@ -147,6 +147,13 @@ onUpdated(() => {
   }
 
   prevPositions.clear()
+})
+
+onBeforeUnmount(() => {
+  if (waitingTransitionEnd) {
+    waitingTransitionEnd.el.removeEventListener('transitionend', waitingTransitionEnd.cb)
+    waitingTransitionEnd = undefined
+  }
 })
 
 let waitingTransitionEnd: { el: HTMLElement; cb: () => void } | undefined

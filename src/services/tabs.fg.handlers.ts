@@ -729,6 +729,11 @@ async function waitForNewTabMove() {
   if (handleNewTabMoveTimeout === undefined) return
 
   return new Promise<void>(ok => {
+    // Limit queue size to prevent unbounded memory growth
+    if (waitingNewTabMove.length >= 100) {
+      const oldCallback = waitingNewTabMove.shift()
+      if (oldCallback) oldCallback()
+    }
     waitingNewTabMove.push(ok)
   })
 }
