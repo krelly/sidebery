@@ -22,12 +22,31 @@ export function scrollToTab(id: ID, smooth?: boolean): void {
     return
   }
 
-  const elId = 'tab' + id.toString()
-  const el = document.getElementById(elId)
-  if (!el) return Logs.warn('Tabs.scrollToTab: Cannot find tab element')
-
   const pH = panel.scrollEl.offsetHeight
   const pS = panel.scrollEl.scrollTop
+  const elId = 'tab' + id.toString()
+  const el = document.getElementById(elId)
+  const tabFullHeight = Sidebar.tabHeight + Sidebar.tabMargin
+  const tabIndex = panel.reactive.visibleTabIds.indexOf(id)
+
+  if (!el && tabFullHeight) {
+    const top = tabIndex * tabFullHeight
+    const bottom = top + tabFullHeight
+
+    if (tabIndex !== -1) {
+      const targetTop = top < pS + PRE_SCROLL ? Math.max(top - PRE_SCROLL, 0) : pS
+      const targetBottom = bottom > pS + pH - PRE_SCROLL ? bottom - pH + PRE_SCROLL : pS
+
+      scrollConf.top = targetTop !== pS ? targetTop : targetBottom
+      panel.scrollEl.scroll(scrollConf)
+      return
+    }
+
+    return Logs.warn('Tabs.scrollToTab: Cannot find tab element')
+  }
+
+  if (!el) return Logs.warn('Tabs.scrollToTab: Cannot find tab element')
+
   const tH = el.offsetHeight
   const tY = el.offsetTop
 
