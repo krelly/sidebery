@@ -11,6 +11,7 @@ import { GroupMsg } from './group.ipc'
 
 const PIN_SCREENSHOT_QUALITY = 90
 const SCREENSHOT_QUALITY = 25
+const AI_SUGGEST_DEFAULT_THRESHOLD = 42
 
 let tabsBoxEl: HTMLElement | null
 let newTabEl: HTMLDivElement
@@ -23,6 +24,38 @@ let pinTab: GroupPin | undefined
 let tabs: GroupedTabInfo[]
 let groupLen: number, groupParentId: ID | undefined
 let screenshots: Record<string, string>
+let aiSuggestBtnEl: HTMLButtonElement | null
+let aiSuggestStatusEl: HTMLElement | null
+let aiSuggestResultsEl: HTMLElement | null
+let aiSuggestApplyBtnEl: HTMLButtonElement | null
+let aiSuggestThresholdLabelEl: HTMLElement | null
+let aiSuggestThresholdInputEl: HTMLInputElement | null
+let aiSuggestThresholdValueEl: HTMLElement | null
+let aiSuggestThresholdResetBtnEl: HTMLButtonElement | null
+let aiSuggestInProgress = false
+let aiSuggestApplyBtnLabel = ''
+
+interface GroupAISuggestResult {
+  status: 'ok' | 'unsupported' | 'permission_denied' | 'no_candidates' | 'error'
+  suggestions?: GroupAISuggestTab[]
+}
+
+interface GroupAISuggestTab {
+  id: ID
+  title: string
+  url: string
+  similarity: number
+}
+
+interface GroupAISuggestOptions {
+  minSimilarity?: number
+  minGroupSimilarity?: number
+}
+
+interface GroupAIApplyResult {
+  status: 'ok' | 'error'
+  moved: number
+}
 
 function waitDOM(): Promise<void> {
   return new Promise(res => {
@@ -128,6 +161,7 @@ async function main() {
   }
 
   createNewTabButton()
+  initAiSuggestControls()
 
   document.body.addEventListener('mousedown', e => {
     if (e.button === 2 && groupParentId !== undefined && groupParentId !== NOID) {
@@ -142,6 +176,262 @@ async function main() {
   browser.runtime.onMessage.addListener(onGroupMsg)
 
   updateScreenshots()
+}
+
+function initAiSuggestControls() {
+  aiSuggestBtnEl = document.getElementById('ai_suggest_btn') as HTMLButtonElement | null
+  aiSuggestStatusEl = document.getElementById('ai_suggest_status')
+  aiSuggestResultsEl = document.getElementById('ai_suggest_results')
+  aiSuggestApplyBtnEl = document.getElementById('ai_suggest_apply_btn') as HTMLButtonElement | null
+  aiSuggestThresholdLabelEl = document.getElementById('ai_suggest_threshold_label')
+  aiSuggestThresholdInputEl = document.getElementById('ai_suggest_threshold') as HTMLInputElement | null
+  aiSuggestThresholdValueEl = document.getElementById('ai_suggest_threshold_value')
+  aiSuggestThresholdResetBtnEl = document.getElementById(
+    'ai_suggest_threshold_reset_btn'
+  ) as HTMLButtonElement | null
+  if (
+    !aiSuggestBtnEl ||
+    !aiSuggestStatusEl ||
+    !aiSuggestResultsEl ||
+    !aiSuggestApplyBtnEl ||
+    !aiSuggestThresholdLabelEl ||
+    !aiSuggestThresholdInputEl ||
+    !aiSuggestThresholdValueEl ||
+    !aiSuggestThresholdResetBtnEl
+  ) {
+    return
+  }
+
+  aiSuggestBtnEl.textContent = browser.i18n.getMessage('group_ai_suggest_btn')
+  aiSuggestApplyBtnLabel = browser.i18n.getMessage('group_ai_suggest_apply_btn')
+  aiSuggestApplyBtnEl.textContent = aiSuggestApplyBtnLabel
+  aiSuggestApplyBtnEl.hidden = true
+  aiSuggestThresholdLabelEl.textContent = browser.i18n.getMessage('group_ai_suggest_threshold_label')
+  aiSuggestThresholdResetBtnEl.textContent = browser.i18n.getMessage('group_ai_suggest_threshold_reset')
+  aiSuggestThresholdInputEl.value = String(AI_SUGGEST_DEFAULT_THRESHOLD)
+  aiSuggestThresholdInputEl.addEventListener('input', updateAiSuggestThresholdView)
+  aiSuggestThresholdResetBtnEl.addEventListener('click', resetAiSuggestThreshold)
+  aiSuggestBtnEl.addEventListener('click', onAiSuggestClick)
+  aiSuggestApplyBtnEl.addEventListener('click', onAiSuggestApplyClick)
+  updateAiSuggestThresholdView()
+}
+
+function setAiSuggestPending(value: boolean) {
+  aiSuggestInProgress = value
+  if (!aiSuggestBtnEl) return
+  aiSuggestBtnEl.disabled = value
+  if (aiSuggestThresholdInputEl) aiSuggestThresholdInputEl.disabled = value
+  if (aiSuggestThresholdResetBtnEl) aiSuggestThresholdResetBtnEl.disabled = value
+  if (aiSuggestApplyBtnEl) {
+    const hasSelected = !!aiSuggestResultsEl?.querySelector('.ai-suggest-item-check:checked')
+    aiSuggestApplyBtnEl.disabled = value || !hasSelected
+  }
+}
+
+function setAiSuggestStatus(msg: string) {
+  if (!aiSuggestStatusEl) return
+  aiSuggestStatusEl.textContent = msg
+}
+
+function getAiSuggestOptions(): GroupAISuggestOptions {
+  const thresholdPercentRaw = Number(aiSuggestThresholdInputEl?.value ?? AI_SUGGEST_DEFAULT_THRESHOLD)
+  const thresholdPercent = Number.isFinite(thresholdPercentRaw)
+    ? Math.max(5, Math.min(99, thresholdPercentRaw))
+    : AI_SUGGEST_DEFAULT_THRESHOLD
+  const minSimilarity = thresholdPercent / 100
+  const minGroupSimilarity = Math.max(0.05, Math.min(minSimilarity, minSimilarity - 0.12))
+
+  return { minSimilarity, minGroupSimilarity }
+}
+
+function updateAiSuggestThresholdView() {
+  if (!aiSuggestThresholdValueEl || !aiSuggestThresholdInputEl) return
+  const value = Number(aiSuggestThresholdInputEl.value)
+  const normalized = Number.isFinite(value) ? Math.max(5, Math.min(99, Math.round(value))) : AI_SUGGEST_DEFAULT_THRESHOLD
+  aiSuggestThresholdInputEl.value = String(normalized)
+  aiSuggestThresholdValueEl.textContent = `${normalized}%`
+}
+
+function resetAiSuggestThreshold(event: MouseEvent) {
+  event.preventDefault()
+  event.stopPropagation()
+  if (!aiSuggestThresholdInputEl) return
+  aiSuggestThresholdInputEl.value = String(AI_SUGGEST_DEFAULT_THRESHOLD)
+  updateAiSuggestThresholdView()
+}
+
+async function requestGroupAiSuggestions(options: GroupAISuggestOptions): Promise<GroupAISuggestResult> {
+  return (await IPC.sidebar(
+    groupWinId,
+    'suggestTabsForGroupViaAI',
+    groupTabId,
+    options
+  )) as GroupAISuggestResult
+}
+
+async function applyGroupAiSuggestions(tabIds: ID[]): Promise<GroupAIApplyResult> {
+  return (await IPC.sidebar(groupWinId, 'applySuggestedTabsToGroupViaAI', groupTabId, tabIds)) as GroupAIApplyResult
+}
+
+function updateAiApplyButtonState() {
+  if (!aiSuggestApplyBtnEl) return
+  const selectedCount =
+    aiSuggestResultsEl?.querySelectorAll('.ai-suggest-item-check:checked').length ?? 0
+
+  aiSuggestApplyBtnEl.textContent =
+    selectedCount > 0 ? `${aiSuggestApplyBtnLabel} (${selectedCount})` : aiSuggestApplyBtnLabel
+
+  if (aiSuggestInProgress) {
+    aiSuggestApplyBtnEl.disabled = true
+    return
+  }
+  aiSuggestApplyBtnEl.disabled = selectedCount === 0
+}
+
+function formatSimilarityScore(value: number): string {
+  const percent = Math.max(0, Math.min(100, Math.round(value * 100)))
+  return `${percent}%`
+}
+
+function clearAiSuggestionList() {
+  if (aiSuggestResultsEl) aiSuggestResultsEl.textContent = ''
+  updateAiApplyButtonState()
+}
+
+function renderAiSuggestionList(suggestions: GroupAISuggestTab[]) {
+  if (!aiSuggestResultsEl) return
+  aiSuggestResultsEl.textContent = ''
+
+  for (const tab of suggestions) {
+    const row = document.createElement('label')
+    row.className = 'ai-suggest-item'
+    row.title = tab.url
+
+    const checkbox = document.createElement('input')
+    checkbox.className = 'ai-suggest-item-check'
+    checkbox.type = 'checkbox'
+    checkbox.value = String(tab.id)
+    checkbox.addEventListener('change', () => {
+      row.classList.toggle('is-selected', checkbox.checked)
+      updateAiApplyButtonState()
+    })
+
+    const main = document.createElement('div')
+    main.className = 'ai-suggest-item-main'
+
+    const title = document.createElement('div')
+    title.className = 'ai-suggest-item-title'
+    title.textContent = tab.title
+
+    const url = document.createElement('div')
+    url.className = 'ai-suggest-item-url'
+    url.textContent = tab.url
+
+    const score = document.createElement('div')
+    score.className = 'ai-suggest-item-score'
+    score.textContent = formatSimilarityScore(tab.similarity)
+
+    main.appendChild(title)
+    main.appendChild(url)
+    row.appendChild(checkbox)
+    row.appendChild(main)
+    row.appendChild(score)
+    aiSuggestResultsEl.appendChild(row)
+  }
+
+  updateAiApplyButtonState()
+}
+
+function getSelectedAiSuggestionIds(): ID[] {
+  if (!aiSuggestResultsEl) return []
+  const selected: ID[] = []
+  const checked = aiSuggestResultsEl.querySelectorAll<HTMLInputElement>('.ai-suggest-item-check:checked')
+  for (const checkbox of checked) {
+    const id = Number(checkbox.value)
+    if (Number.isInteger(id)) selected.push(id)
+  }
+  return selected
+}
+
+async function onAiSuggestClick(event: MouseEvent) {
+  event.preventDefault()
+  event.stopPropagation()
+  if (aiSuggestInProgress) return
+
+  if (aiSuggestApplyBtnEl) aiSuggestApplyBtnEl.hidden = false
+  setAiSuggestPending(true)
+  setAiSuggestStatus(browser.i18n.getMessage('group_ai_suggest_working'))
+  clearAiSuggestionList()
+
+  try {
+    const options = getAiSuggestOptions()
+    let result = await requestGroupAiSuggestions(options)
+    if (result.status === 'permission_denied') {
+      // Permission state can propagate with a short delay after enabling in addon settings.
+      await sleep(120)
+      result = await requestGroupAiSuggestions(options)
+    }
+
+    if (result.status === 'ok') {
+      const suggestions = result.suggestions ?? []
+      if (!suggestions.length) {
+        setAiSuggestStatus(browser.i18n.getMessage('group_ai_suggest_none'))
+        return
+      }
+
+      renderAiSuggestionList(suggestions)
+      const msg = browser.i18n.getMessage('group_ai_suggest_found')
+      setAiSuggestStatus(`${msg} ${suggestions.length}`)
+    } else if (result.status === 'no_candidates') {
+      setAiSuggestStatus(browser.i18n.getMessage('group_ai_suggest_none'))
+    } else if (result.status === 'permission_denied') {
+      setAiSuggestStatus(browser.i18n.getMessage('group_ai_suggest_permission'))
+    } else if (result.status === 'unsupported') {
+      setAiSuggestStatus(browser.i18n.getMessage('group_ai_suggest_unavailable'))
+    } else {
+      setAiSuggestStatus(browser.i18n.getMessage('group_ai_suggest_failed'))
+    }
+  } catch (err) {
+    Logs.warn('GroupPage.onAiSuggestClick: failed:', err)
+    setAiSuggestStatus(browser.i18n.getMessage('group_ai_suggest_failed'))
+  } finally {
+    setAiSuggestPending(false)
+  }
+}
+
+async function onAiSuggestApplyClick(event: MouseEvent) {
+  event.preventDefault()
+  event.stopPropagation()
+  if (aiSuggestInProgress) return
+
+  const selectedIds = getSelectedAiSuggestionIds()
+  if (!selectedIds.length) {
+    setAiSuggestStatus(browser.i18n.getMessage('group_ai_suggest_select_one'))
+    updateAiApplyButtonState()
+    return
+  }
+
+  setAiSuggestPending(true)
+  setAiSuggestStatus(browser.i18n.getMessage('group_ai_suggest_applying'))
+
+  try {
+    const result = await applyGroupAiSuggestions(selectedIds)
+    if (result.status === 'ok') {
+      if (result.moved > 0) {
+        setAiSuggestStatus(`${browser.i18n.getMessage('group_ai_suggest_added')} ${result.moved}`)
+        clearAiSuggestionList()
+      } else {
+        setAiSuggestStatus(browser.i18n.getMessage('group_ai_suggest_none'))
+      }
+    } else {
+      setAiSuggestStatus(browser.i18n.getMessage('group_ai_suggest_failed'))
+    }
+  } catch (err) {
+    Logs.warn('GroupPage.onAiSuggestApplyClick: failed:', err)
+    setAiSuggestStatus(browser.i18n.getMessage('group_ai_suggest_failed'))
+  } finally {
+    setAiSuggestPending(false)
+  }
 }
 
 function parseUrl(): GroupConfig | undefined {

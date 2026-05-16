@@ -487,6 +487,24 @@ export const sidebarTranslations: Translations = {
     zh_TW: '不再顯示',
     ja: '再表示しない',
   },
+  'popup.group_suggest.title': {
+    en: (n, title) => {
+      const count = typeof n === 'number' ? n : Number(n ?? 0)
+      const groupName = title?.toString() ?? ''
+      return `Add ${count} suggested tab${count === 1 ? '' : 's'} to "${groupName}"?`
+    },
+  },
+  'popup.group_suggest.note': {
+    en: (titles, rest) => {
+      const list = titles?.toString() ?? ''
+      const restNum = typeof rest === 'number' ? rest : Number(rest ?? 0)
+      if (restNum > 0) return `${list} and ${restNum} more`
+      return list
+    },
+  },
+  'popup.group_suggest.add': {
+    en: 'Add tabs',
+  },
   // - Processing tabs
   'popup.proc_tabs.title': {
     en: 'Processing tabs...',
@@ -846,6 +864,27 @@ export const sidebarTranslations: Translations = {
     zh_CN: '撤消',
     zh_TW: '復原',
     ja: '元に戻す',
+  },
+  'notif.group_suggest.none': {
+    en: 'No related tabs found for this group',
+  },
+  'notif.group_suggest.ai_unavailable': {
+    en: 'AI tab grouping is unavailable in this Firefox build',
+  },
+  'notif.group_suggest.ai_failed': {
+    en: 'AI tab suggestion failed',
+  },
+  'notif.group_suggest.found': {
+    en: n => {
+      const count = typeof n === 'number' ? n : Number(n ?? 0)
+      return `AI suggested ${count} tab${count === 1 ? '' : 's'} for this group`
+    },
+  },
+  'notif.group_suggest.added': {
+    en: n => {
+      const count = typeof n === 'number' ? n : Number(n ?? 0)
+      return `Added ${count} tab${count === 1 ? '' : 's'} to the group`
+    },
   },
   'notif.tabs_rm_post': {
     en: ' tabs closed',

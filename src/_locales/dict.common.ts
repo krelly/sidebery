@@ -1977,6 +1977,9 @@ export const commonTranslations: Translations = {
     zh_TW: '分給群組',
     ja: 'グループ',
   },
+  'menu.tab.suggest_tabs_to_group': {
+    en: 'Suggest tabs for group',
+  },
   'menu.tab.flatten': {
     en: 'Flatten',
     de: 'Plätten',
@@ -2261,6 +2264,10 @@ export const commonTranslations: Translations = {
     zh_CN: '关闭重复的标签页',
     zh_TW: '關閉重複分頁',
     ja: '重複タブを閉じる',
+  },
+  'menu.tabs_panel.suggest_groups_ai': {
+    en: 'Suggest groups with AI',
+    ru: 'Предложить группы через ИИ',
   },
   'menu.tabs_panel.close': {
     en: 'Close tabs',

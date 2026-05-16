@@ -1478,5 +1478,117 @@
     "zh_CN": "打开新标签页",
     "zh_TW": "開啟新分頁",
     "ja": "新しいタブを開く"
+  },
+  "group_ai_suggest_btn": {
+    "en": "Find Related Tabs with AI",
+    "ru": "Найти связанные вкладки через ИИ"
+  },
+  "group_ai_suggest_threshold_label": {
+    "en": "Similarity threshold",
+    "ru": "Порог схожести"
+  },
+  "group_ai_suggest_threshold_reset": {
+    "en": "Reset",
+    "ru": "Сброс"
+  },
+  "group_ai_suggest_apply_btn": {
+    "en": "Add Selected to Group",
+    "ru": "Добавить выбранные в группу"
+  },
+  "group_ai_suggest_working": {
+    "en": "AI is analyzing tabs...",
+    "ru": "ИИ анализирует вкладки..."
+  },
+  "group_ai_suggest_applying": {
+    "en": "Adding selected tabs...",
+    "ru": "Добавляю выбранные вкладки..."
+  },
+  "group_ai_suggest_found": {
+    "en": "AI suggested tabs:",
+    "ru": "ИИ предложил вкладок:"
+  },
+  "group_ai_suggest_added": {
+    "en": "Added tabs:",
+    "ru": "Добавлено вкладок:"
+  },
+  "group_ai_suggest_none": {
+    "en": "AI found no related tabs",
+    "ru": "ИИ не нашёл связанных вкладок"
+  },
+  "group_ai_suggest_select_one": {
+    "en": "Select at least one tab to add",
+    "ru": "Выбери хотя бы одну вкладку для добавления"
+  },
+  "group_ai_suggest_permission": {
+    "en": "AI permission is required (trialML)",
+    "ru": "Нужно разрешение ИИ (trialML)"
+  },
+  "group_ai_suggest_unavailable": {
+    "en": "AI API is unavailable in this Firefox build",
+    "ru": "AI API недоступен в этой сборке Firefox"
+  },
+  "group_ai_suggest_failed": {
+    "en": "AI suggestion failed",
+    "ru": "Не удалось получить AI-подсказки"
+  },
+  "ai_groups_page_title": {
+    "en": "AI Group Suggestions",
+    "ru": "Предложения групп от ИИ"
+  },
+  "ai_groups_refresh_btn": {
+    "en": "Find Again",
+    "ru": "Найти заново"
+  },
+  "ai_groups_working": {
+    "en": "AI is analyzing tabs...",
+    "ru": "ИИ анализирует вкладки..."
+  },
+  "ai_groups_found": {
+    "en": "Suggested groups: $1",
+    "ru": "Предложено групп: $1"
+  },
+  "ai_groups_none": {
+    "en": "No suggested groups were found",
+    "ru": "Похожие группы не найдены"
+  },
+  "ai_groups_permission": {
+    "en": "AI permission is required (trialML)",
+    "ru": "Нужно разрешение ИИ (trialML)"
+  },
+  "ai_groups_unavailable": {
+    "en": "AI API is unavailable in this Firefox build",
+    "ru": "AI API недоступен в этой сборке Firefox"
+  },
+  "ai_groups_failed": {
+    "en": "AI grouping failed",
+    "ru": "Не удалось получить AI-группы"
+  },
+  "ai_groups_create_btn": {
+    "en": "Create Group",
+    "ru": "Создать группу"
+  },
+  "ai_groups_creating": {
+    "en": "Creating group...",
+    "ru": "Создаю группу..."
+  },
+  "ai_groups_created": {
+    "en": "Created group with tabs: $1",
+    "ru": "Создана группа, вкладок: $1"
+  },
+  "ai_groups_select_one": {
+    "en": "Select at least one tab",
+    "ru": "Выбери хотя бы одну вкладку"
+  },
+  "ai_groups_similarity": {
+    "en": "Similarity: $1",
+    "ru": "Схожесть: $1"
+  },
+  "ai_groups_tabs_count": {
+    "en": "Tabs: $1",
+    "ru": "Вкладок: $1"
+  },
+  "ai_groups_bad_url": {
+    "en": "Cannot open this page: missing panel parameters",
+    "ru": "Страница открыта без параметров панели"
   }
 }

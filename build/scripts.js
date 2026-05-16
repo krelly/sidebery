@@ -328,6 +328,7 @@ async function main() {
         'src/bg/background.ts',
         'src/sidebar/sidebar.ts',
         'src/page.setup/setup.ts',
+        'src/page.group/ai-groups.ts',
         'src/popup.sync/sync.ts',
         'src/popup.panel-config/panel-config.ts',
         'src/popup.proxy/proxy.ts',

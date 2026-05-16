@@ -118,6 +118,10 @@ export type SidebarActions = {
   openTabs: (items: ItemInfo[], dst: DstPlaceInfo) => Promise<boolean>
   moveTabToPanelViaOmnibox: typeof TabsFg.moveTabToPanelViaOmnibox
   moveTabToGroupViaOmnibox: typeof TabsFg.moveTabToGroupViaOmnibox
+  suggestTabsForGroupViaAI: typeof TabsFg.suggestTabsForGroupViaAI
+  applySuggestedTabsToGroupViaAI: typeof TabsFg.applySuggestedTabsToGroupViaAI
+  suggestGroupsForPanelViaAI: typeof TabsFg.suggestGroupsForPanelViaAI
+  createSuggestedGroupViaAI: typeof TabsFg.createSuggestedGroupViaAI
 
   notify: (config: Notification, timeout?: number) => void
   notifyAboutNewSnapshot: () => void

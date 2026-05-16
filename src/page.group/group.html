@@ -55,6 +55,29 @@
     <div class="title-highlight"></div>
   </div>
 
+  <div class="actions">
+    <div class="ai-suggest-threshold">
+      <div id="ai_suggest_threshold_label" class="ai-suggest-threshold-label"></div>
+      <div class="ai-suggest-threshold-controls">
+        <input
+          id="ai_suggest_threshold"
+          class="ai-suggest-threshold-input"
+          type="range"
+          min="5"
+          max="99"
+          step="1"
+          value="42">
+        <button id="ai_suggest_threshold_reset_btn" class="ai-suggest-threshold-reset" type="button"></button>
+      </div>
+      <div id="ai_suggest_threshold_value" class="ai-suggest-threshold-value"></div>
+    </div>
+
+    <button id="ai_suggest_btn" class="action-btn" type="button"></button>
+    <div id="ai_suggest_status" class="action-status"></div>
+    <div id="ai_suggest_results" class="ai-suggest-results"></div>
+    <button id="ai_suggest_apply_btn" class="action-btn" type="button" disabled hidden></button>
+  </div>
+
   <div id="disconnected_warn" class="disconnected-warn"></div>
 
   <div id="pinned_tab" class="pinned-tab">

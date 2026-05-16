@@ -52,7 +52,8 @@
     "clipboardWrite",
     "clipboardRead",
     "history",
-    "downloads"
+    "downloads",
+    "trialML"
   ],
   "sidebar_action": {
     "default_icon": "./assets/logo-native.svg",

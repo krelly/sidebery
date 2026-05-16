@@ -321,6 +321,21 @@ export const tabsMenuOptions: Record<string, () => MenuOption | MenuOption[] | u
     return option
   },
 
+  suggestGroupTabs: () => {
+    const firstTab = Tabs.byId[Selection.getFirst()]
+    const option: MenuOption = {
+      label: translate('menu.tab.suggest_tabs_to_group'),
+      icon: 'icon_group_tabs',
+      onClick: () => {
+        if (firstTab) void Tabs.suggestTabsForGroup(firstTab.id)
+      },
+    }
+
+    if (!firstTab?.isGroup || Selection.getLength() !== 1) option.inactive = true
+    if (!Settings.state.ctxMenuRenderInact && option.inactive) return
+    return option
+  },
+
   flatten: () => {
     const option: MenuOption = {
       label: translate('menu.tab.flatten'),
@@ -712,6 +727,22 @@ export const tabsMenuOptions: Record<string, () => MenuOption | MenuOption[] | u
       },
     }
     if (!ids.length) option.inactive = true
+    if (!Settings.state.ctxMenuRenderInact && option.inactive) return
+    return option
+  },
+
+  suggestGroupsForPanelAI: () => {
+    const panel = Sidebar.panelsById[Selection.getFirst()]
+    if (!Utils.isTabsPanel(panel)) return
+
+    const option: MenuOption = {
+      label: translate('menu.tabs_panel.suggest_groups_ai'),
+      icon: 'icon_group_tabs',
+      onClick: () => {
+        void Tabs.openAIGroupsSuggestionsPage(panel.id)
+      },
+    }
+    if (panel.tabs.length < 2) option.inactive = true
     if (!Settings.state.ctxMenuRenderInact && option.inactive) return
     return option
   },

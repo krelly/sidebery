@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html color-scheme="system-color">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: light-dark(#f4f6fb, #1e2228);
+      --panel: light-dark(#ffffff, #2a3038);
+      --line: light-dark(#d7dce7, #3b4350);
+      --text: light-dark(#1f2837, #d9e0ec);
+      --text-sub: light-dark(#4c5971, #9aa8bf);
+      --accent: light-dark(#0f6bda, #60a5fa);
+      --accent-soft: light-dark(#e9f2ff, #253750);
+      --selected: light-dark(#eef5ff, #2b3d56);
+      --selected-line: light-dark(#c8dcff, #4d6b96);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      color: var(--text);
+      background: radial-gradient(circle at top left, light-dark(#ffffff, #2a2f36), var(--bg));
+      font-family:
+        "Segoe UI",
+        "Noto Sans",
+        "Liberation Sans",
+        sans-serif;
+    }
+
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .head {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .head-line {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 7px 12px;
+      color: var(--text);
+      background: var(--panel);
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    .status {
+      min-height: 18px;
+      color: var(--text-sub);
+      font-size: 13px;
+    }
+
+    .groups {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      align-items: start;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 180px;
+    }
+
+    .card-head {
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .group-title-input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 7px 9px;
+      color: var(--text);
+      background: var(--panel);
+      font-size: 13px;
+    }
+
+    .group-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    .card-list {
+      display: flex;
+      flex-direction: column;
+      overflow: auto;
+      max-height: 296px;
+    }
+
+    .card-row {
+      display: grid;
+      grid-template-columns: 22px 16px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+      cursor: pointer;
+    }
+
+    .card-row.is-selected {
+      background: var(--selected);
+      box-shadow: inset 0 0 0 1px var(--selected-line);
+    }
+
+    .row-main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .row-fav {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      background: light-dark(#d9dfeb, #4a5567);
+      object-fit: contain;
+    }
+
+    .row-title {
+      font-size: 13px;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .row-url {
+      font-size: 11px;
+      color: var(--text-sub);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .row-score {
+      font-size: 11px;
+      color: var(--text-sub);
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+    }
+
+    .card-foot {
+      padding: 10px;
+      margin-top: auto;
+    }
+
+    .create-btn {
+      width: 100%;
+      color: #fff;
+      border-color: transparent;
+      background: var(--accent);
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 12px;
+      }
+
+      .groups {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  <title>...</title>
+</head>
+<body>
+  <main class="page">
+    <section class="head">
+      <div class="head-line">
+        <h1 id="title"></h1>
+        <button id="refresh_btn" type="button"></button>
+      </div>
+      <div id="status" class="status"></div>
+    </section>
+    <section id="groups" class="groups"></section>
+  </main>
+  <script type="module" src="./ai-groups.js" defer></script>
+</body>
+</html>

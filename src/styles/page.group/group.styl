@@ -55,6 +55,178 @@ body input
 body[data-pin="true"] .title-box
   display: none
 
+.actions
+  width: 100%
+  max-width: var(--max-width)
+  display: flex
+  flex-direction: column
+  align-items: center
+  margin: 0 0 18px
+body[data-pin="true"] .actions
+  margin-top: 24px
+
+.ai-suggest-threshold
+  width: 100%
+  max-width: 700px
+  margin: 0 0 10px
+
+.ai-suggest-threshold-label
+  font-size: rem(12)
+  color: var(--toolbar-fg)
+  opacity: .8
+  margin: 0 0 6px
+
+.ai-suggest-threshold-controls
+  display: grid
+  grid-template-columns: 1fr auto
+  gap: 8px
+  align-items: center
+
+.ai-suggest-threshold-input
+  width: 100%
+  height: 20px
+  margin: 0
+  padding: 0
+  background: transparent
+  appearance: none
+  -moz-appearance: none
+  cursor: pointer
+
+.ai-suggest-threshold-input::-moz-range-track
+  height: 4px
+  border: none
+  border-radius: 999px
+  background-color: #7b7b7b80
+
+.ai-suggest-threshold-input::-moz-range-progress
+  height: 4px
+  border: none
+  border-radius: 999px
+  background-color: #4f88ff
+
+.ai-suggest-threshold-input::-moz-range-thumb
+  width: 14px
+  height: 14px
+  border: none
+  border-radius: 50%
+  background-color: #4f88ff
+  box-shadow: 0 0 0 2px #1f1f1f66
+
+.ai-suggest-threshold-input:disabled
+  opacity: .6
+  cursor: default
+
+.ai-suggest-threshold-reset
+  border: none
+  border-radius: 6px
+  height: 28px
+  padding: 0 10px
+  background-color: #78787824
+  color: var(--toolbar-fg)
+  font-size: rem(12)
+  cursor: pointer
+  &:hover
+    background-color: #78787832
+  &[disabled]
+    opacity: .55
+    cursor: default
+
+.ai-suggest-threshold-value
+  text-align: right
+  font-size: rem(12)
+  color: var(--toolbar-fg)
+  opacity: .8
+  margin: 6px 0 0
+
+.action-btn
+  height: 36px
+  min-width: 220px
+  padding: 0 14px
+  border: none
+  border-radius: 6px
+  background-color: #78787824
+  color: var(--toolbar-fg)
+  font-size: rem(13)
+  font-weight: 600
+  cursor: pointer
+  opacity: .95
+  &:hover
+    background-color: #78787832
+  &:active
+    opacity: .75
+  &[disabled]
+    cursor: default
+    opacity: .55
+
+#ai_suggest_apply_btn
+  margin-top: 10px
+
+.action-status
+  min-height: 16px
+  margin-top: 8px
+  font-size: rem(12)
+  color: var(--toolbar-fg)
+  opacity: .7
+  text-align: center
+
+.ai-suggest-results
+  width: 100%
+  max-width: 700px
+  margin-top: 10px
+  display: flex
+  flex-direction: column
+  gap: 6px
+  max-height: 340px
+  overflow-y: auto
+  padding-right: 2px
+
+.ai-suggest-item
+  display: grid
+  grid-template-columns: auto 1fr auto
+  align-items: center
+  gap: 8px
+  width: 100%
+  padding: 8px 10px
+  border-radius: 6px
+  background-color: #7878781f
+  color: var(--toolbar-fg)
+  font-size: rem(12)
+  cursor: pointer
+  box-sizing: border-box
+  border: 1px solid transparent
+  &:hover
+    background-color: #7878782a
+
+.ai-suggest-item.is-selected
+  background-color: #6da6ff2e
+  border-color: #6da6ff75
+
+.ai-suggest-item-check
+  margin: 0
+  width: 15px
+  height: 15px
+  accent-color: #4f88ff
+
+.ai-suggest-item-main
+  display: flex
+  flex-direction: column
+  min-width: 0
+
+.ai-suggest-item-title
+  white-space: nowrap
+  overflow: hidden
+  text-overflow: ellipsis
+
+.ai-suggest-item-url
+  white-space: nowrap
+  overflow: hidden
+  text-overflow: ellipsis
+  opacity: .65
+
+.ai-suggest-item-score
+  font-size: rem(11)
+  opacity: .75
+
 .title
   position: relative
   display: block
